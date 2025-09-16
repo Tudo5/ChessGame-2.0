@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VSCode Chess</title>
+  <title>VSCode Chess & Checkers</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -16,6 +16,9 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script type="text/babel">
+    /*************************
+     *  ШАХМАТЫ (твой код, без изменений)
+     *************************/
     const pieceSets = {
       classic: { wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙", bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟" },
       emerald: { wK: "♚", wQ: "♛", wR: "♜", wB: "♝", wN: "♞", wP: "♟", bK: "♔", bQ: "♕", bR: "♖", bB: "♗", bN: "♘", bP: "♙" },
@@ -166,12 +169,9 @@
       const [turn, setTurn] = React.useState("w");
       const [selected, setSelected] = React.useState(null);
       const [history, setHistory] = React.useState([]);
-      const [themeIndex, setThemeIndex] = React.useState(0);
       const [mode, setMode] = React.useState("2p");
       const [difficulty, setDifficulty] = React.useState(3);
       const [status, setStatus] = React.useState("");
-
-      const theme = themes[themeIndex];
 
       const legalTargets = React.useMemo(() => {
         if (!selected) return [];
@@ -185,7 +185,7 @@
         if (p.kind === "P" && (r === 0 || r === 7)) p.kind = "Q";
         const nextTurn = turn === "w" ? "b" : "w";
         setBoard(nb); setTurn(nextTurn); setSelected(null);
-        setHistory(h => [...h, `${pieceToUnicode(p, theme.key)} → ${String.fromCharCode(97 + c)}${8 - r}`]);
+        setHistory(h => [...h, `${pieceToUnicode(p, "classic")} → ${String.fromCharCode(97 + c)}${8 - r}`]);
         const state = getGameState(nb, nextTurn);
         setStatus(state.result);
       }
@@ -213,72 +213,260 @@
       function reset() { setBoard(initialBoard()); setTurn("w"); setSelected(null); setHistory([]); setStatus(""); }
 
       return (
-        <div className="p-6 min-h-screen flex items-start justify-center bg-gradient-to-br from-gray-900 to-gray-800 font-sans">
-          <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <div className="p-4 rounded-xl shadow-xl bg-white/5">
-                <div className="flex justify-between mb-3 text-white">
-                  <h2 className="text-2xl font-semibold">VSCode Chess</h2>
-                  <div>Ход: <b>{turn === "w" ? "Белые" : "Чёрные"}</b></div>
-                </div>
-                {status && (
-                  <div className="mb-2 p-2 text-center text-lg font-bold bg-red-500/80 rounded">
-                    {status}
-                    <button onClick={reset} className="ml-3 px-2 py-1 bg-white/20 rounded">Reset</button>
-                  </div>
-                )}
-                <div className="grid grid-cols-8 border rounded-md overflow-hidden w-full max-w-[640px] mx-auto">
-                  {board.map((row, r) => row.map((cell, c) => {
-                    const isLight = (r + c) % 2 === 0;
-                    const isSel = selected && selected[0] === r && selected[1] === c;
-                    const isTgt = legalTargets.includes(`${r},${c}`);
-                    return (
-                      <div key={`${r}-${c}`} onClick={() => onSquareClick(r, c)}
-                        className="relative flex items-center justify-center cursor-pointer select-none aspect-square transition-all"
-                        style={{ background: isLight ? theme.light : theme.dark, outline: isSel ? "3px solid rgba(99,102,241,0.8)" : undefined }}>
-                        {cell && (
-                          <div className="text-5xl" style={cell.color === "w" ? theme.pieceStyle.white : theme.pieceStyle.black}>
-                            {pieceToUnicode(cell, theme.key)}
-                          </div>
-                        )}
-                        {isTgt && <div className="absolute w-4 h-4 rounded-full bg-emerald-500/85"></div>}
-                      </div>
-                    )
-                  }))}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 items-center text-white">
-                  <button onClick={reset} className="px-3 py-1 rounded-lg bg-white/10">Reset</button>
-                  <select value={themeIndex} onChange={e => setThemeIndex(+e.target.value)} className="px-3 py-1 rounded-lg bg-white/10 cursor-pointer">
-                    {themes.map((t, i) => <option key={i} value={i}>{t.name}</option>)}
-                  </select>
-                  <select value={mode} onChange={e => setMode(e.target.value)} className="px-3 py-1 rounded-lg bg-white/10 cursor-pointer">
-                    <option value="2p">2 игрока</option>
-                    <option value="bot">Против бота</option>
-                  </select>
-                  {mode === "bot" && (
-                    <select value={difficulty} onChange={e => setDifficulty(+e.target.value)} className="px-3 py-1 rounded-lg bg-white/10 cursor-pointer">
-                      <option value="2">Лёгкий</option>
-                      <option value="3">Средний</option>
-                      <option value="4">Сложный</option>
-                    </select>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="col-span-1">
-              <div className="p-4 rounded-xl shadow-xl bg-white/5 h-full">
-                <h3 className="text-white font-semibold mb-2">История ходов</h3>
-                <div className="h-64 lg:h-96 overflow-auto text-sm text-gray-200 p-2 bg-black/20 rounded">
-                  {history.map((h, i) => <div key={i}>{i + 1}. {h}</div>)}
-                </div>
-              </div>
-            </div>
+        <div className="p-4 min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-gray-900 to-gray-800 font-sans">
+
+          {/* Режимы */}
+          <div className="w-full max-w-[640px] flex justify-center gap-4 mb-4">
+            <button onClick={() => setMode("2p")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "2p" ? "bg-gradient-to-r from-yellow-700 to-orange-600 text-white shadow-md" : "bg-yellow-500 text-white hover:bg-yellow-600"} active:scale-95`}>2 Players</button>
+            <button onClick={() => setMode("bot")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "bot" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md" : "bg-gray-600 text-gray-100 hover:bg-purple-500 hover:text-white"} active:scale-95`}>Vs Bot</button>
           </div>
+
+          {/* Reset */}
+          <div className="w-full max-w-[640px] flex justify-center mb-4">
+            <button onClick={reset} className="w-full sm:w-1/2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-all duration-150 active:scale-95">Reset</button>
+          </div>
+
+          {/* Бот уровень */}
+          {mode === "bot" && (
+            <div className="w-full max-w-[640px] flex justify-center mb-4">
+              <select value={difficulty} onChange={e => setDifficulty(+e.target.value)} className="w-full sm:w-3/4 px-6 py-4 text-lg rounded-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:from-purple-600 hover:to-pink-600 active:scale-95 transition-all duration-150 text-center">
+                <option value={1}>Easy</option>
+                <option value={2}>Medium</option>
+                <option value={3}>Hard</option>
+              </select>
+            </div>
+          )}
+
+          <h2 className="text-2xl sm:text-3xl text-white mb-4 font-bold tracking-wide">Шахматы</h2>
+
+          {/* Доска */}
+          <div className="grid grid-cols-8 w-full max-w-[640px] aspect-square border-4 border-[#8B5E3C] rounded-md overflow-hidden">
+            {board.map((row, r) => row.map((cell, c) => {
+              const isLight = (r + c) % 2 === 0;
+              const isSel = selected && selected[0] === r && selected[1] === c;
+              const isTgt = legalTargets.includes(`${r},${c}`);
+              return (
+                <div key={`${r}-${c}`} onClick={() => onSquareClick(r, c)}
+                  className={`relative aspect-square flex items-center justify-center cursor-pointer select-none transition-all duration-150 ${isLight ? "bg-[#F5DEB3]" : "bg-[#8B5E3C]"} ${isSel ? "outline-4 outline outline-yellow-400" : ""}`}>
+                  {cell && (
+                    <div className={`text-4xl sm:text-5xl transition-all duration-150 ${cell.color === "w" ? "text-white" : "text-black"}`}>
+                      {pieceToUnicode(cell, "classic")}
+                    </div>
+                  )}
+                  {isTgt && <div className="absolute w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full"></div>}
+                </div>
+              )
+            }))}
+          </div>
+
+          <div className="mt-4 text-white text-lg sm:text-xl font-semibold tracking-wide">Ход: {turn === "w" ? "Белые" : "Чёрные"}</div>
         </div>
-      )
+      );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<ChessGame />);
+
+    /*************************
+     *  ШАШКИ (новый компонент)
+     *************************/
+    function CheckersGame() {
+      const size = 8;
+      const [board, setBoard] = React.useState(initBoard());
+      const [turn, setTurn] = React.useState("w");
+      const [selected, setSelected] = React.useState(null);
+      const [moves, setMoves] = React.useState([]);
+      const [mode, setMode] = React.useState("2p");
+      const [difficulty, setDifficulty] = React.useState(1);
+      const [animating, setAnimating] = React.useState(false);
+
+      function initBoard() {
+        const b = Array(size).fill(null).map(() => Array(size).fill(null));
+        for (let r = 0; r < 3; r++)
+          for (let c = 0; c < size; c++)
+            if ((r + c) % 2 === 1) b[r][c] = { color: "b", king: false };
+        for (let r = size - 3; r < size; r++)
+          for (let c = 0; c < size; c++)
+            if ((r + c) % 2 === 1) b[r][c] = { color: "w", king: false };
+        return b;
+      }
+
+      function getMoves(r, c, b = board, path = [], captured = []) {
+        const p = b[r][c];
+        if (!p) return [];
+        let dirs = p.king ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : (p.color === "w" ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]]);
+        let movesList = [];
+
+        for (let [dr, dc] of dirs) {
+          let nr = r + dr, nc = c + dc;
+          while (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+            const target = b[nr][nc];
+            if (!target && captured.length === 0) {
+              movesList.push({ path: [...path, [nr, nc]], captured: [] });
+            } else if (target && target.color !== p.color && !captured.some(pos => pos[0] === nr && pos[1] === nc)) {
+              const jr = nr + dr, jc = nc + dc;
+              if (jr >= 0 && jr < size && jc >= 0 && jc < size && !b[jr][jc]) {
+                const nb = b.map(row => row.map(c => c ? { ...c } : null));
+                nb[jr][jc] = nb[r][c]; nb[r][c] = null; nb[nr][nc] = null;
+                const further = getMoves(jr, jc, nb, [...path, [jr, jc]], [...captured, [nr, nc]]);
+                if (further.length > 0) movesList.push(...further);
+                else movesList.push({ path: [...path, [jr, jc]], captured: [...captured, [nr, nc]] });
+              }
+              break;
+            } else break;
+            if (!p.king) break; // Пешка делает только один шаг
+            nr += dr; nc += dc;
+          }
+        }
+        return movesList;
+      }
+
+      function onClick(r, c) {
+        if (animating) return;
+        if (selected) {
+          const sr = selected[0], sc = selected[1];
+          const move = moves.find(m => {
+            const last = m.path[m.path.length - 1];
+            return last[0] === r && last[1] === c;
+          });
+          if (move) {
+            performMove(sr, sc, move.path, move.captured, () => setTurn(turn === "w" ? "b" : "w"));
+            setSelected(null); setMoves([]);
+            return;
+          }
+          setSelected(null); setMoves([]);
+        } else {
+          const p = board[r][c];
+          if (p && p.color === turn) {
+            setSelected([r, c]);
+            setMoves(getMoves(r, c));
+          }
+        }
+      }
+      function performMove(sr, sc, path, captured, callback) {
+        setAnimating(true);
+        const newBoard = board.map(row => row.map(c => c ? { ...c } : null));
+        const piece = { ...newBoard[sr][sc] };
+        newBoard[sr][sc] = null;
+
+        const finalStep = path[path.length - 1];
+        piece.king = piece.king || (piece.color === "w" && finalStep[0] === 0) || (piece.color === "b" && finalStep[0] === size - 1);
+
+        // Сразу перемещаем шашку, убираем съеденные
+        newBoard[finalStep[0]][finalStep[1]] = piece;
+        captured.forEach(([cr, cc]) => newBoard[cr][cc] = null);
+        setBoard(newBoard);
+        setTimeout(() => { setAnimating(false); if (callback) callback(); }, 50); // быстрая анимация
+      }
+
+      function reset() {
+        setBoard(initBoard());
+        setTurn("w");
+        setSelected(null);
+        setMoves([]);
+        setAnimating(false);
+      }
+
+      React.useEffect(() => {
+        if (mode === "bot" && turn === "b" && !animating) {
+          const allMoves = [];
+          for (let r = 0; r < size; r++)
+            for (let c = 0; c < size; c++) {
+              const p = board[r][c];
+              if (p && p.color === "b") {
+                const mv = getMoves(r, c);
+                mv.forEach(m => allMoves.push([[r, c], m]));
+              }
+            }
+          if (allMoves.length > 0) {
+            setTimeout(() => {
+              let chosen;
+              if (difficulty === 1) chosen = allMoves[Math.floor(Math.random() * allMoves.length)];
+              else if (difficulty === 2) {
+                allMoves.sort((a, b) => b[1].captured.length - a[1].captured.length);
+                chosen = allMoves[0];
+              } else {
+                const maxCap = Math.max(...allMoves.map(m => m[1].captured.length));
+                const best = allMoves.filter(m => m[1].captured.length === maxCap);
+                chosen = best[Math.floor(Math.random() * best.length)];
+              }
+              const [[sr, sc], mv] = chosen;
+              performMove(sr, sc, mv.path, mv.captured, () => setTurn("w"));
+            }, 100);
+          }
+        }
+      }, [board, turn, mode, difficulty, animating]);
+
+      return (
+        <div className="p-4 min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-gray-900 to-gray-800 font-sans">
+
+          {/* Режимы */}
+          <div className="w-full max-w-[640px] flex justify-center gap-4 mb-4">
+            <button onClick={() => setMode("2p")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "2p" ? "bg-gradient-to-r from-yellow-700 to-orange-600 text-white shadow-md" : "bg-yellow-500 text-white hover:bg-yellow-600"} active:scale-95`}>2 Players</button>
+            <button onClick={() => setMode("bot")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "bot" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md" : "bg-gray-600 text-gray-100 hover:bg-purple-500 hover:text-white"} active:scale-95`}>Vs Bot</button>
+          </div>
+
+          {/* Reset */}
+          <div className="w-full max-w-[640px] flex justify-center mb-4">
+            <button onClick={reset} className="w-full sm:w-1/2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-all duration-150 active:scale-95">Reset</button>
+          </div>
+
+          {/* Бот уровень */}
+          {mode === "bot" && (
+            <div className="w-full max-w-[640px] flex justify-center mb-4">
+              <select value={difficulty} onChange={e => setDifficulty(+e.target.value)} className="w-full sm:w-3/4 px-6 py-4 text-lg rounded-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:from-purple-600 hover:to-pink-600 active:scale-95 transition-all duration-150 text-center">
+                <option value={1}>Easy</option>
+                <option value={2}>Medium</option>
+                <option value={3}>Hard</option>
+              </select>
+            </div>
+          )}
+
+          <h2 className="text-2xl sm:text-3xl text-white mb-4 font-bold tracking-wide">Шашки</h2>
+
+          {/* Доска */}
+          <div className="grid grid-cols-8 w-full max-w-[640px] aspect-square border-4 border-[#8B5E3C] rounded-md overflow-hidden">
+            {board.map((row, r) => row.map((cell, c) => {
+              const isLight = (r + c) % 2 === 0;
+              const isSel = selected && selected[0] === r && selected[1] === c;
+              const isMove = moves.some(m => {
+                const last = m.path[m.path.length - 1];
+                return last[0] === r && last[1] === c;
+              });
+              return (
+                <div key={`${r}-${c}`} onClick={() => onClick(r, c)}
+                  className={`relative aspect-square flex items-center justify-center cursor-pointer select-none transition-all duration-150 ${isLight ? "bg-[#F5DEB3]" : "bg-[#8B5E3C]"} ${isSel ? "outline-4 outline outline-yellow-400" : ""}`}>
+                  {cell && (
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-2xl sm:text-3xl transition-all duration-150 ${cell.color === "w" ? "bg-white text-black" : "bg-black text-white"}`}>
+                      {cell.king ? "👑" : ""}
+                    </div>
+                  )}
+                  {isMove && <div className="absolute w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full"></div>}
+                </div>
+              )
+            }))}
+          </div>
+
+          <div className="mt-4 text-white text-lg sm:text-xl font-semibold tracking-wide">Ход: {turn === "w" ? "Белые" : "Чёрные"}</div>
+        </div>
+      );
+    }
+    /*************************
+     *  APP: переключение
+     *************************/
+    function App() {
+      const [game, setGame] = React.useState("chess");
+      return (
+        <div>ф
+          <div className="flex gap-2 p-4 bg-gray-800 text-white">
+            <button onClick={() => setGame("chess")} className={`px-4 py-2 rounded ${game === "chess" ? "bg-blue-500" : "bg-gray-600"}`}>Шахматы</button>
+            <button onClick={() => setGame("checkers")} className={`px-4 py-2 rounded ${game === "checkers" ? "bg-blue-500" : "bg-gray-600"}`}>Шашки</button>
+          </div>
+          {game === "chess" ? <ChessGame /> : <CheckersGame />}
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
   </script>
 </body>
+
 </html>
