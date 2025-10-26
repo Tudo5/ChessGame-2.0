@@ -2,13 +2,13 @@
 <html lang="ru">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VSCode Chess & Checkers</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Шахматы и Шашки — Тема и подсветка</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-gray-900">
+<body>
   <div id="root"></div>
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -16,454 +16,476 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script type="text/babel">
-    /*************************
-     *  ШАХМАТЫ (твой код, без изменений)
-     *************************/
-    const pieceSets = {
-      classic: { wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙", bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟" },
-      emerald: { wK: "♚", wQ: "♛", wR: "♜", wB: "♝", wN: "♞", wP: "♟", bK: "♔", bQ: "♕", bR: "♖", bB: "♗", bN: "♘", bP: "♙" },
-      ocean: { wK: "🦑", wQ: "🐋", wR: "🦀", wB: "🐠", wN: "🐬", wP: "🐚", bK: "🦑", bQ: "🐋", bR: "🦀", bB: "🐠", bN: "🐬", bP: "🐚" },
-      purple: { wK: "👑", wQ: "💎", wR: "🏰", wB: "🔮", wN: "🦄", wP: "⭐", bK: "☠️", bQ: "🌑", bR: "⚔️", bB: "👻", bN: "🐉", bP: "🕸️" },
-    };
+    /* ------------- УТИЛИТЫ ------------- */
+    const inBounds = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+    const cloneBoard = b => b.map(row => row.map(cell => cell ? { ...cell } : null));
 
-    const themes = [
-      { name: "Classic", key: "classic", light: "linear-gradient(135deg,#f0d9b5,#fff5e1)", dark: "linear-gradient(135deg,#b58863,#8b5e3c)", pieceStyle: { white: { color: "#fff", textShadow: "0 0 2px black" }, black: { color: "#000" } } },
-      { name: "Emerald", key: "emerald", light: "linear-gradient(135deg,#d1fae5,#a7f3d0)", dark: "linear-gradient(135deg,#10b981,#065f46)", pieceStyle: { white: { color: "#34d399", textShadow: "0 0 3px #064e3b" }, black: { color: "#064e3b" } } },
-      { name: "Ocean", key: "ocean", light: "linear-gradient(135deg,#e0f2fe,#bae6fd)", dark: "linear-gradient(135deg,#0284c7,#075985)", pieceStyle: { white: { color: "#38bdf8", textShadow: "0 0 3px #0c4a6e" }, black: { color: "#0c4a6e" } } },
-      { name: "Purple", key: "purple", light: "linear-gradient(135deg,#ede9fe,#ddd6fe)", dark: "linear-gradient(135deg,#7c3aed,#4c1d95)", pieceStyle: { white: { color: "#c4b5fd", textShadow: "0 0 3px #312e81" }, black: { color: "#312e81" } } }
-    ];
-
-    const initialBoard = () => {
-      const empty = Array(8).fill(null).map(() => Array(8).fill(null));
+    /* ========== ШАХМАТЫ ========== */
+    const chessPieces = { wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙", bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟" };
+    function initialChessBoard() {
+      const b = Array(8).fill(null).map(() => Array(8).fill(null));
       const back = ["R", "N", "B", "Q", "K", "B", "N", "R"];
-      for (let i = 0; i < 8; i++) empty[0][i] = { color: "b", kind: back[i] };
-      for (let i = 0; i < 8; i++) empty[1][i] = { color: "b", kind: "P" };
-      for (let i = 0; i < 8; i++) empty[6][i] = { color: "w", kind: "P" };
-      for (let i = 0; i < 8; i++) empty[7][i] = { color: "w", kind: back[i] };
-      return empty;
-    };
-
-    function cloneBoard(b) { return b.map(r => r.map(c => c ? { ...c } : null)); }
-
-    function getMoves(board, r, c) {
-      const cell = board[r][c]; if (!cell) return [];
-      const { color, kind } = cell; const dir = color === "w" ? -1 : 1;
-      const moves = []; const inB = (x, y) => x >= 0 && x < 8 && y >= 0 && y < 8;
-      const push = (x, y) => { if (!inB(x, y)) return; const t = board[x][y]; if (!t || t.color !== color) moves.push([x, y]); };
-      if (kind === "P") {
-        const one = r + dir, two = r + 2 * dir;
-        if (inB(one, c) && !board[one][c]) {
-          moves.push([one, c]);
-          const start = color === "w" ? 6 : 1;
-          if (r === start && inB(two, c) && !board[two][c]) moves.push([two, c]);
+      for (let i = 0; i < 8; i++) {
+        b[0][i] = { color: "b", kind: back[i] };
+        b[1][i] = { color: "b", kind: "P" };
+        b[6][i] = { color: "w", kind: "P" };
+        b[7][i] = { color: "w", kind: back[i] };
+      }
+      return b;
+    }
+    function getChessMovesRaw(board, r, c) {
+      const p = board[r][c]; if (!p) return [];
+      const moves = []; const push = (x, y) => { if (!inBounds(x, y)) return; const t = board[x][y]; if (!t || t.color !== p.color) moves.push([x, y]); };
+      if (p.kind === "P") {
+        const dir = p.color === "w" ? -1 : 1;
+        if (inBounds(r + dir, c) && !board[r + dir][c]) moves.push([r + dir, c]);
+        if ((r === 6 && p.color === "w") || (r === 1 && p.color === "b")) {
+          if (inBounds(r + 2 * dir, c) && !board[r + dir][c] && !board[r + 2 * dir][c]) moves.push([r + 2 * dir, c]);
         }
         for (let dy of [-1, 1]) {
-          const x = r + dir, y = c + dy;
-          if (inB(x, y) && board[x][y] && board[x][y].color !== color) moves.push([x, y]);
+          if (inBounds(r + dir, c + dy) && board[r + dir][c + dy] && board[r + dir][c + dy].color !== p.color) moves.push([r + dir, c + dy]);
         }
-      } else if (kind === "N") {
-        for (let [dx, dy] of [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]) push(r + dx, c + dy);
-      } else if (["B", "R", "Q"].includes(kind)) {
-        const dirs = [];
-        if (["B", "Q"].includes(kind)) dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
-        if (["R", "Q"].includes(kind)) dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
-        for (let [dx, dy] of dirs) {
+      }
+      if (p.kind === "N") {
+        [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]].forEach(([dx, dy]) => push(r + dx, c + dy));
+      }
+      if (["B", "R", "Q"].includes(p.kind)) {
+        const dirs = []; if (["B", "Q"].includes(p.kind)) dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]); if (["R", "Q"].includes(p.kind)) dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+        dirs.forEach(([dx, dy]) => {
           let x = r + dx, y = c + dy;
-          while (inB(x, y)) {
+          while (inBounds(x, y)) {
             if (!board[x][y]) { moves.push([x, y]); x += dx; y += dy; continue; }
-            if (board[x][y].color !== color) moves.push([x, y]); break;
+            if (board[x][y].color !== p.color) moves.push([x, y]);
+            break;
           }
-        }
-      } else if (kind === "K") {
-        for (let dx = -1; dx <= 1; dx++)
-          for (let dy = -1; dy <= 1; dy++) if (dx || dy) push(r + dx, c + dy);
+        });
+      }
+      if (p.kind === "K") {
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (dx || dy) push(r + dx, c + dy);
       }
       return moves;
     }
-
-    function isKingInCheck(board, color) {
-      let kr, kc;
-      for (let r = 0; r < 8; r++)
-        for (let c = 0; c < 8; c++) {
-          const p = board[r][c];
-          if (p && p.color === color && p.kind === "K") { kr = r; kc = c; }
-        }
-      for (let r = 0; r < 8; r++)
-        for (let c = 0; c < 8; c++) {
-          const p = board[r][c];
-          if (p && p.color !== color) {
-            const moves = getMoves(board, r, c);
-            if (moves.some(([mr, mc]) => mr === kr && mc === kc)) return true;
-          }
-        }
-      return false;
+    function findKing(board, color) {
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (board[r][c] && board[r][c].color === color && board[r][c].kind === "K") return [r, c];
+      return null;
     }
-
-    function hasAnyMoves(board, color) {
-      for (let r = 0; r < 8; r++)
-        for (let c = 0; c < 8; c++) {
-          const p = board[r][c];
-          if (p && p.color === color) {
-            const moves = getMoves(board, r, c);
-            for (let [mr, mc] of moves) {
-              const nb = cloneBoard(board);
-              nb[mr][mc] = nb[r][c]; nb[r][c] = null;
-              if (!isKingInCheck(nb, color)) return true;
-            }
-          }
+    function isCheck(board, color) {
+      const kingPos = findKing(board, color); if (!kingPos) return false;
+      const enemy = color === "w" ? "b" : "w";
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.color === enemy) {
+          const moves = getChessMovesRaw(board, r, c);
+          if (moves.some(([x, y]) => x === kingPos[0] && y === kingPos[1])) return true;
         }
-      return false;
-    }
-
-    function getGameState(board, turn) {
-      const enemy = turn === "w" ? "b" : "w";
-      if (!hasAnyMoves(board, turn)) {
-        if (isKingInCheck(board, turn)) return { over: true, result: `Мат! Победили ${enemy === "w" ? "Белые" : "Чёрные"}` };
-        else return { over: true, result: "Пат!" };
       }
-      return { over: false, result: isKingInCheck(board, turn) ? "Шах!" : "" };
+      return false;
     }
-
-    const values = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 1000 };
-    function evaluate(board) {
-      let score = 0;
-      for (let r = 0; r < 8; r++)
-        for (let c = 0; c < 8; c++) {
-          const p = board[r][c];
-          if (!p) continue;
-          const v = values[p.kind];
-          score += p.color === "w" ? v : -v;
+    function getLegalChessMoves(board, r, c) {
+      const raw = getChessMovesRaw(board, r, c);
+      const legal = [];
+      for (const [nr, nc] of raw) {
+        const nb = cloneBoard(board);
+        nb[nr][nc] = nb[r][c];
+        nb[r][c] = null;
+        if (!isCheck(nb, nb[nr][nc].color)) legal.push([nr, nc]);
+      }
+      return legal;
+    }
+    function allChessLegalMoves(board, color) {
+      const res = [];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.color === color) {
+          const moves = getLegalChessMoves(board, r, c);
+          for (const [nr, nc] of moves) res.push({ from: [r, c], to: [nr, nc] });
         }
-      return score;
+      }
+      return res;
     }
-
-    function minimax(board, depth, maximizing, alpha = -Infinity, beta = Infinity) {
-      if (depth === 0) return [evaluate(board), null];
-      const color = maximizing ? "w" : "b"; let best = maximizing ? -Infinity : Infinity; let bestMove = null;
-      const moves = [];
-      for (let r = 0; r < 8; r++)
-        for (let c = 0; c < 8; c++) {
-          const p = board[r][c]; if (!p || p.color !== color) continue;
-          for (let [mr, mc] of getMoves(board, r, c)) {
+    function isCheckmate(board, color) {
+      if (!isCheck(board, color)) return false;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.color === color) {
+          const moves = getLegalChessMoves(board, r, c);
+          for (const [nr, nc] of moves) {
             const nb = cloneBoard(board);
-            nb[mr][mc] = nb[r][c]; nb[r][c] = null;
-            if (nb[mr][mc].kind === "P" && (mr === 0 || mr === 7)) nb[mr][mc].kind = "Q";
-            if (!isKingInCheck(nb, color)) moves.push([[r, c], [mr, mc]]);
+            nb[nr][nc] = nb[r][c]; nb[r][c] = null;
+            if (!isCheck(nb, color)) return false;
           }
         }
-      const MAX_BRANCHES = 20; const limitedMoves = moves.slice(0, MAX_BRANCHES);
-      for (let [[sr, sc], [r, c]] of limitedMoves) {
-        const nb = cloneBoard(board); nb[r][c] = nb[sr][sc]; nb[sr][sc] = null;
-        const [score] = minimax(nb, depth - 1, !maximizing, alpha, beta);
-        if (maximizing) { if (score > best) { best = score; bestMove = [[sr, sc], [r, c]]; } alpha = Math.max(alpha, best); }
-        else { if (score < best) { best = score; bestMove = [[sr, sc], [r, c]]; } beta = Math.min(beta, best); }
-        if (beta <= alpha) break;
       }
-      return [best, bestMove];
+      return true;
+    }
+    const pieceValue = { K: 900, Q: 90, R: 50, B: 30, N: 30, P: 10 };
+    function materialScore(board, color) {
+      let sum = 0;
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p) {
+          sum += (p.color === color ? 1 : -1) * (pieceValue[p.kind] || 0);
+        }
+      }
+      return sum;
     }
 
-    function pieceToUnicode(p, setKey) { return pieceSets[setKey][p.color + p.kind]; }
+    /* ========== ШАШКИ ========== */
+    function initCheckersBoard() {
+      const b = Array(8).fill(null).map(() => Array(8).fill(null));
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) b[r][c] = { color: "b", king: false };
+      for (let r = 5; r < 8; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) b[r][c] = { color: "w", king: false };
+      return b;
+    }
+    function getCheckersMoves(board, r, c) {
+      const p = board[r][c]; if (!p) return [];
+      const dirs = p.king ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : (p.color === "w" ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]]);
+      const moves = [];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (inBounds(nr, nc) && !board[nr][nc]) moves.push({ path: [[nr, nc]], captured: [] });
+      }
+      function jump(r0, c0, path, captured, visited) {
+        let cont = false;
+        for (const [dr, dc] of dirs) {
+          const mr = r0 + dr, mc = c0 + dc;
+          const jr = mr + dr, jc = mc + dc;
+          if (inBounds(mr, mc) && board[mr][mc] && board[mr][mc].color !== p.color && inBounds(jr, jc) && !board[jr][jc] && !visited.has(mr * 8 + mc)) {
+            const newVisited = new Set(visited); newVisited.add(mr * 8 + mc);
+            const newPath = [...path, [jr, jc]]; const newCaptured = [...captured, [mr, mc]];
+            const further = jump(jr, jc, newPath, newCaptured, newVisited);
+            if (!further) moves.push({ path: newPath, captured: newCaptured });
+            cont = true;
+          }
+        }
+        return cont;
+      }
+      jump(r, c, [], [], new Set());
+      return moves;
+    }
 
-    function ChessGame() {
-      const [board, setBoard] = React.useState(initialBoard());
+    /* ========== БОТЫ (не трогаем) ========== */
+    function chessBotMove(board, color, level) {
+      const moves = allChessLegalMoves(board, color);
+      if (moves.length === 0) return null;
+      if (level === 1) return moves[Math.floor(Math.random() * moves.length)];
+      if (level === 2) {
+        const caps = moves.filter(m => !!board[m.to[0]][m.to[1]]);
+        if (caps.length) return caps[Math.floor(Math.random() * caps.length)];
+        return moves[Math.floor(Math.random() * moves.length)];
+      }
+      let best = null; let bestScore = -Infinity;
+      for (const m of moves) {
+        const nb = cloneBoard(board);
+        nb[m.to[0]][m.to[1]] = nb[m.from[0]][m.from[1]]; nb[m.from[0]][m.from[1]] = null;
+        const p = nb[m.to[0]][m.to[1]];
+        if (p.kind === "P" && (m.to[0] === 0 || m.to[0] === 7)) p.kind = "Q";
+        if (isCheck(nb, color)) continue;
+        const score = materialScore(nb, color);
+        if (score > bestScore || (score === bestScore && Math.random() < 0.2)) { bestScore = score; best = m; }
+      }
+      return best || moves[Math.floor(Math.random() * moves.length)];
+    }
+    function checkersBotMove(board, color, level) {
+      const all = [];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.color === color) {
+          const moves = getCheckersMoves(board, r, c);
+          for (const mv of moves) all.push({ from: [r, c], move: mv });
+        }
+      }
+      if (all.length === 0) return null;
+      if (level === 1) return all[Math.floor(Math.random() * all.length)];
+      if (level === 2) {
+        const caps = all.filter(a => a.move.captured.length > 0);
+        if (caps.length) return caps[Math.floor(Math.random() * caps.length)];
+        return all[Math.floor(Math.random() * all.length)];
+      }
+      let best = null; let bestCap = -1;
+      for (const a of all) {
+        const ccount = a.move.captured.length;
+        if (ccount > bestCap || (ccount === bestCap && Math.random() < 0.2)) { best = a; bestCap = ccount; }
+      }
+      return best;
+    }
+
+    /* ========== КОМПОНЕНТ: ChessGame (обновлён для темы и подсветки) ========== */
+    function ChessGame({ goMenu, theme, toggleTheme }) {
+      const [board, setBoard] = React.useState(initialChessBoard());
       const [turn, setTurn] = React.useState("w");
       const [selected, setSelected] = React.useState(null);
-      const [history, setHistory] = React.useState([]);
-      const [mode, setMode] = React.useState("2p");
-      const [difficulty, setDifficulty] = React.useState(3);
-      const [status, setStatus] = React.useState("");
-
-      const legalTargets = React.useMemo(() => {
-        if (!selected) return [];
-        const [r, c] = selected;
-        return getMoves(board, r, c).map(([x, y]) => `${x},${y}`);
-      }, [board, selected]);
-
-      function movePiece(sr, sc, r, c) {
-        const nb = cloneBoard(board);
-        const p = nb[sr][sc]; nb[sr][sc] = null; nb[r][c] = p;
-        if (p.kind === "P" && (r === 0 || r === 7)) p.kind = "Q";
-        const nextTurn = turn === "w" ? "b" : "w";
-        setBoard(nb); setTurn(nextTurn); setSelected(null);
-        setHistory(h => [...h, `${pieceToUnicode(p, "classic")} → ${String.fromCharCode(97 + c)}${8 - r}`]);
-        const state = getGameState(nb, nextTurn);
-        setStatus(state.result);
-      }
-
-      function onSquareClick(r, c) {
-        if (status.includes("Мат") || status.includes("Пат")) return;
-        const piece = board[r][c];
-        if (selected) {
-          const [sr, sc] = selected;
-          if (legalTargets.includes(`${r},${c}`)) { movePiece(sr, sc, r, c); }
-          else if (piece && piece.color === turn) setSelected([r, c]);
-          else setSelected(null);
-        } else if (piece && piece.color === turn) setSelected([r, c]);
-      }
+      const [highlight, setHighlight] = React.useState([]);
+      const [mode, setMode] = React.useState(null);
+      const [botLevel, setBotLevel] = React.useState(1);
+      const [message, setMessage] = React.useState("");
+      const [gameOver, setGameOver] = React.useState(false);
 
       React.useEffect(() => {
-        if (mode === "bot" && turn === "b" && !status.includes("Мат") && !status.includes("Пат")) {
-          setTimeout(() => {
-            const [_, move] = minimax(board, difficulty, false);
-            if (move) { const [[sr, sc], [r, c]] = move; movePiece(sr, sc, r, c); }
-          }, 300);
+        if (mode === "bot" && turn === "b" && !gameOver) {
+          const t = setTimeout(() => {
+            const m = chessBotMove(board, "b", botLevel);
+            if (m) {
+              performMove(m.from[0], m.from[1], m.to[0], m.to[1]);
+            } else {
+              if (isCheck(board, "b")) { setMessage("♛ МАТ ♛"); setGameOver(true); }
+              else { setMessage("Пат"); setGameOver(true); }
+            }
+          }, 350);
+          return () => clearTimeout(t);
         }
-      }, [turn, mode, board, status]);
+      }, [board, turn, mode, botLevel, gameOver]);
 
-      function reset() { setBoard(initialBoard()); setTurn("w"); setSelected(null); setHistory([]); setStatus(""); }
-
-      return (
-        <div className="p-4 min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-gray-900 to-gray-800 font-sans">
-
-          {/* Режимы */}
-          <div className="w-full max-w-[640px] flex justify-center gap-4 mb-4">
-            <button onClick={() => setMode("2p")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "2p" ? "bg-gradient-to-r from-yellow-700 to-orange-600 text-white shadow-md" : "bg-yellow-500 text-white hover:bg-yellow-600"} active:scale-95`}>2 Players</button>
-            <button onClick={() => setMode("bot")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "bot" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md" : "bg-gray-600 text-gray-100 hover:bg-purple-500 hover:text-white"} active:scale-95`}>Vs Bot</button>
-          </div>
-
-          {/* Reset */}
-          <div className="w-full max-w-[640px] flex justify-center mb-4">
-            <button onClick={reset} className="w-full sm:w-1/2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-all duration-150 active:scale-95">Reset</button>
-          </div>
-
-          {/* Бот уровень */}
-          {mode === "bot" && (
-            <div className="w-full max-w-[640px] flex justify-center mb-4">
-              <select value={difficulty} onChange={e => setDifficulty(+e.target.value)} className="w-full sm:w-3/4 px-6 py-4 text-lg rounded-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:from-purple-600 hover:to-pink-600 active:scale-95 transition-all duration-150 text-center">
-                <option value={1}>Easy</option>
-                <option value={2}>Medium</option>
-                <option value={3}>Hard</option>
-              </select>
-            </div>
-          )}
-
-          <h2 className="text-2xl sm:text-3xl text-white mb-4 font-bold tracking-wide">Шахматы</h2>
-
-          {/* Доска */}
-          <div className="grid grid-cols-8 w-full max-w-[640px] aspect-square border-4 border-[#8B5E3C] rounded-md overflow-hidden">
-            {board.map((row, r) => row.map((cell, c) => {
-              const isLight = (r + c) % 2 === 0;
-              const isSel = selected && selected[0] === r && selected[1] === c;
-              const isTgt = legalTargets.includes(`${r},${c}`);
-              return (
-                <div key={`${r}-${c}`} onClick={() => onSquareClick(r, c)}
-                  className={`relative aspect-square flex items-center justify-center cursor-pointer select-none transition-all duration-150 ${isLight ? "bg-[#F5DEB3]" : "bg-[#8B5E3C]"} ${isSel ? "outline-4 outline outline-yellow-400" : ""}`}>
-                  {cell && (
-                    <div className={`text-4xl sm:text-5xl transition-all duration-150 ${cell.color === "w" ? "text-white" : "text-black"}`}>
-                      {pieceToUnicode(cell, "classic")}
-                    </div>
-                  )}
-                  {isTgt && <div className="absolute w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full"></div>}
-                </div>
-              )
-            }))}
-          </div>
-
-          <div className="mt-4 text-white text-lg sm:text-xl font-semibold tracking-wide">Ход: {turn === "w" ? "Белые" : "Чёрные"}</div>
-        </div>
-      );
-    }
-
-
-    /*************************
-     *  ШАШКИ (новый компонент)
-     *************************/
-    function CheckersGame() {
-      const size = 8;
-      const [board, setBoard] = React.useState(initBoard());
-      const [turn, setTurn] = React.useState("w");
-      const [selected, setSelected] = React.useState(null);
-      const [moves, setMoves] = React.useState([]);
-      const [mode, setMode] = React.useState("2p");
-      const [difficulty, setDifficulty] = React.useState(1);
-      const [animating, setAnimating] = React.useState(false);
-
-      function initBoard() {
-        const b = Array(size).fill(null).map(() => Array(size).fill(null));
-        for (let r = 0; r < 3; r++)
-          for (let c = 0; c < size; c++)
-            if ((r + c) % 2 === 1) b[r][c] = { color: "b", king: false };
-        for (let r = size - 3; r < size; r++)
-          for (let c = 0; c < size; c++)
-            if ((r + c) % 2 === 1) b[r][c] = { color: "w", king: false };
-        return b;
-      }
-
-      function getMoves(r, c, b = board, path = [], captured = []) {
-        const p = b[r][c];
-        if (!p) return [];
-        let dirs = p.king ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : (p.color === "w" ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]]);
-        let movesList = [];
-
-        for (let [dr, dc] of dirs) {
-          let nr = r + dr, nc = c + dc;
-          while (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-            const target = b[nr][nc];
-            if (!target && captured.length === 0) {
-              movesList.push({ path: [...path, [nr, nc]], captured: [] });
-            } else if (target && target.color !== p.color && !captured.some(pos => pos[0] === nr && pos[1] === nc)) {
-              const jr = nr + dr, jc = nc + dc;
-              if (jr >= 0 && jr < size && jc >= 0 && jc < size && !b[jr][jc]) {
-                const nb = b.map(row => row.map(c => c ? { ...c } : null));
-                nb[jr][jc] = nb[r][c]; nb[r][c] = null; nb[nr][nc] = null;
-                const further = getMoves(jr, jc, nb, [...path, [jr, jc]], [...captured, [nr, nc]]);
-                if (further.length > 0) movesList.push(...further);
-                else movesList.push({ path: [...path, [jr, jc]], captured: [...captured, [nr, nc]] });
-              }
-              break;
-            } else break;
-            if (!p.king) break; // Пешка делает только один шаг
-            nr += dr; nc += dc;
-          }
+      function performMove(sr, sc, r, c) {
+        if (gameOver) return;
+        const nb = cloneBoard(board);
+        nb[r][c] = nb[sr][sc];
+        nb[sr][sc] = null;
+        const piece = nb[r][c];
+        if (piece.kind === "P" && (r === 0 || r === 7)) piece.kind = "Q";
+        setBoard(nb);
+        const next = turn === "w" ? "b" : "w";
+        setTurn(next);
+        setSelected(null);
+        setHighlight([]);
+        if (isCheck(nb, next)) {
+          if (isCheckmate(nb, next)) { setMessage("♛ МАТ ♛"); setGameOver(true); }
+          else { setMessage("♞ ШАХ ♞"); setTimeout(() => setMessage(""), 1200); }
+        } else {
+          const movesExist = allChessLegalMoves(nb, next).length > 0;
+          if (!movesExist) { setMessage("Пат"); setGameOver(true); }
         }
-        return movesList;
       }
 
       function onClick(r, c) {
-        if (animating) return;
-        if (selected) {
-          const sr = selected[0], sc = selected[1];
-          const move = moves.find(m => {
-            const last = m.path[m.path.length - 1];
-            return last[0] === r && last[1] === c;
-          });
-          if (move) {
-            performMove(sr, sc, move.path, move.captured, () => setTurn(turn === "w" ? "b" : "w"));
-            setSelected(null); setMoves([]);
-            return;
-          }
-          setSelected(null); setMoves([]);
+        if (gameOver) return;
+        const p = board[r][c];
+        if (!selected) {
+          if (mode === null) { setMessage("Выберите режим игры (2 игрока или с ботом)"); setTimeout(() => setMessage(""), 1100); return; }
+          if (p && p.color === turn) { setSelected([r, c]); setHighlight(getLegalChessMoves(board, r, c)); }
         } else {
-          const p = board[r][c];
-          if (p && p.color === turn) {
-            setSelected([r, c]);
-            setMoves(getMoves(r, c));
-          }
+          if (highlight.some(([hr, hc]) => hr === r && hc === c)) { performMove(selected[0], selected[1], r, c); return; }
+          if (p && p.color === turn) { setSelected([r, c]); setHighlight(getLegalChessMoves(board, r, c)); }
+          else { setSelected(null); setHighlight([]); }
         }
       }
-      function performMove(sr, sc, path, captured, callback) {
-        setAnimating(true);
-        const newBoard = board.map(row => row.map(c => c ? { ...c } : null));
-        const piece = { ...newBoard[sr][sc] };
-        newBoard[sr][sc] = null;
 
-        const finalStep = path[path.length - 1];
-        piece.king = piece.king || (piece.color === "w" && finalStep[0] === 0) || (piece.color === "b" && finalStep[0] === size - 1);
-
-        // Сразу перемещаем шашку, убираем съеденные
-        newBoard[finalStep[0]][finalStep[1]] = piece;
-        captured.forEach(([cr, cc]) => newBoard[cr][cc] = null);
-        setBoard(newBoard);
-        setTimeout(() => { setAnimating(false); if (callback) callback(); }, 50); // быстрая анимация
-      }
-
-      function reset() {
-        setBoard(initBoard());
-        setTurn("w");
-        setSelected(null);
-        setMoves([]);
-        setAnimating(false);
-      }
-
-      React.useEffect(() => {
-        if (mode === "bot" && turn === "b" && !animating) {
-          const allMoves = [];
-          for (let r = 0; r < size; r++)
-            for (let c = 0; c < size; c++) {
-              const p = board[r][c];
-              if (p && p.color === "b") {
-                const mv = getMoves(r, c);
-                mv.forEach(m => allMoves.push([[r, c], m]));
-              }
-            }
-          if (allMoves.length > 0) {
-            setTimeout(() => {
-              let chosen;
-              if (difficulty === 1) chosen = allMoves[Math.floor(Math.random() * allMoves.length)];
-              else if (difficulty === 2) {
-                allMoves.sort((a, b) => b[1].captured.length - a[1].captured.length);
-                chosen = allMoves[0];
-              } else {
-                const maxCap = Math.max(...allMoves.map(m => m[1].captured.length));
-                const best = allMoves.filter(m => m[1].captured.length === maxCap);
-                chosen = best[Math.floor(Math.random() * best.length)];
-              }
-              const [[sr, sc], mv] = chosen;
-              performMove(sr, sc, mv.path, mv.captured, () => setTurn("w"));
-            }, 100);
-          }
-        }
-      }, [board, turn, mode, difficulty, animating]);
+      function reset() { setBoard(initialChessBoard()); setTurn("w"); setSelected(null); setHighlight([]); setMode(null); setBotLevel(1); setMessage(""); setGameOver(false); }
 
       return (
-        <div className="p-4 min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-gray-900 to-gray-800 font-sans">
-
-          {/* Режимы */}
-          <div className="w-full max-w-[640px] flex justify-center gap-4 mb-4">
-            <button onClick={() => setMode("2p")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "2p" ? "bg-gradient-to-r from-yellow-700 to-orange-600 text-white shadow-md" : "bg-yellow-500 text-white hover:bg-yellow-600"} active:scale-95`}>2 Players</button>
-            <button onClick={() => setMode("bot")} className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all duration-150 ${mode === "bot" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md" : "bg-gray-600 text-gray-100 hover:bg-purple-500 hover:text-white"} active:scale-95`}>Vs Bot</button>
-          </div>
-
-          {/* Reset */}
-          <div className="w-full max-w-[640px] flex justify-center mb-4">
-            <button onClick={reset} className="w-full sm:w-1/2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md transition-all duration-150 active:scale-95">Reset</button>
-          </div>
-
-          {/* Бот уровень */}
-          {mode === "bot" && (
-            <div className="w-full max-w-[640px] flex justify-center mb-4">
-              <select value={difficulty} onChange={e => setDifficulty(+e.target.value)} className="w-full sm:w-3/4 px-6 py-4 text-lg rounded-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:from-purple-600 hover:to-pink-600 active:scale-95 transition-all duration-150 text-center">
-                <option value={1}>Easy</option>
-                <option value={2}>Medium</option>
-                <option value={3}>Hard</option>
-              </select>
-            </div>
-          )}
-
-          <h2 className="text-2xl sm:text-3xl text-white mb-4 font-bold tracking-wide">Шашки</h2>
-
-          {/* Доска */}
-          <div className="grid grid-cols-8 w-full max-w-[640px] aspect-square border-4 border-[#8B5E3C] rounded-md overflow-hidden">
-            {board.map((row, r) => row.map((cell, c) => {
-              const isLight = (r + c) % 2 === 0;
-              const isSel = selected && selected[0] === r && selected[1] === c;
-              const isMove = moves.some(m => {
-                const last = m.path[m.path.length - 1];
-                return last[0] === r && last[1] === c;
-              });
-              return (
-                <div key={`${r}-${c}`} onClick={() => onClick(r, c)}
-                  className={`relative aspect-square flex items-center justify-center cursor-pointer select-none transition-all duration-150 ${isLight ? "bg-[#F5DEB3]" : "bg-[#8B5E3C]"} ${isSel ? "outline-4 outline outline-yellow-400" : ""}`}>
-                  {cell && (
-                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-2xl sm:text-3xl transition-all duration-150 ${cell.color === "w" ? "bg-white text-black" : "bg-black text-white"}`}>
-                      {cell.king ? "👑" : ""}
+        <div className="game-container">
+          {message && <div className="popup">{message}</div>}
+          <div className="game-controls">
+            <div className="mode-controls">
+              {mode === null ? (
+                <>
+                  <button className="btn small" onClick={() => setMode("2p")}>🧑‍🤝‍🧑 2 игрока</button>
+                  <button className="btn small" onClick={() => setMode("bot")}>🤖 С ботом</button>
+                  <button className="btn small alt" onClick={reset}>🔄 Новая</button>
+                  <button className="btn small alt" onClick={goMenu}>🏠 В меню</button>
+                </>
+              ) : (
+                <>
+                  <div className="mode-row">
+                    <button className={`btn small ${mode === "2p" ? "selected" : ""}`} onClick={() => setMode("2p")}>🧑‍🤝‍🧑 2 игрока</button>
+                    <button className={`btn small ${mode === "bot" ? "selected" : ""}`} onClick={() => setMode("bot")}>🤖 С ботом</button>
+                  </div>
+                  {mode === "bot" && (
+                    <div className="difficulty">
+                      <span className="diff-label">Уровень:</span>
+                      <button className={`btn tiny ${botLevel === 1 ? "selected" : ""}`} onClick={() => setBotLevel(1)}>Лёгкий</button>
+                      <button className={`btn tiny ${botLevel === 2 ? "selected" : ""}`} onClick={() => setBotLevel(2)}>Средний</button>
+                      <button className={`btn tiny ${botLevel === 3 ? "selected" : ""}`} onClick={() => setBotLevel(3)}>Сложный</button>
                     </div>
                   )}
-                  {isMove && <div className="absolute w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full"></div>}
-                </div>
-              )
-            }))}
+                  <button className="btn small alt" onClick={reset}>🔄 Новая</button>
+                  <button className="btn small alt" onClick={goMenu}>🏠 В меню</button>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="mt-4 text-white text-lg sm:text-xl font-semibold tracking-wide">Ход: {turn === "w" ? "Белые" : "Чёрные"}</div>
-        </div>
-      );
-    }
-    /*************************
-     *  APP: переключение
-     *************************/
-    function App() {
-      const [game, setGame] = React.useState("chess");
-      return (
-        <div>ф
-          <div className="flex gap-2 p-4 bg-gray-800 text-white">
-            <button onClick={() => setGame("chess")} className={`px-4 py-2 rounded ${game === "chess" ? "bg-blue-500" : "bg-gray-600"}`}>Шахматы</button>
-            <button onClick={() => setGame("checkers")} className={`px-4 py-2 rounded ${game === "checkers" ? "bg-blue-500" : "bg-gray-600"}`}>Шашки</button>
+          <h2 className="title">Шахматы</h2>
+
+          <div className="theme-switcher" style={{ marginBottom: 8 }}>
+            <button className="btn small alt" onClick={toggleTheme}>🎨 Тема: {theme === "neon" ? "Неоновая" : "Классическая"}</button>
           </div>
-          {game === "chess" ? <ChessGame /> : <CheckersGame />}
+
+          <div className="board-wrapper">
+            <div className="board" role="grid" aria-label="Шахматная доска">
+              {board.map((row, r) => row.map((cell, c) => {
+                const light = (r + c) % 2 === 0;
+                const sel = selected && selected[0] === r && selected[1] === c;
+                const isMove = highlight.some(([hr, hc]) => hr === r && hc === c);
+                return (
+                  <div key={r + "-" + c} onClick={() => onClick(r, c)}
+                    className={`cell ${light ? "light" : "dark"} ${sel ? "selected" : ""} ${isMove ? "highlight" : ""}`}>
+                    {cell && <span className={`piece ${cell.color === "w" ? "text-white" : "text-black"}`}>{chessPieces[cell.color + cell.kind]}</span>}
+                  </div>
+                );
+              }))}
+            </div>
+          </div>
+
+          <div className="status">Ход: <strong>{turn === "w" ? "Белые" : "Чёрные"}</strong></div>
         </div>
       );
     }
+
+    /* ========== КОМПОНЕНТ: CheckersGame (обновлённый, с темой) ========== */
+    function CheckersGame({ goMenu, theme, toggleTheme }) {
+      const [board, setBoard] = React.useState(initCheckersBoard());
+      const [turn, setTurn] = React.useState("w");
+      const [selected, setSelected] = React.useState(null);
+      const [moves, setMoves] = React.useState([]);
+      const [mode, setMode] = React.useState(null);
+      const [botLevel, setBotLevel] = React.useState(1);
+      const [message, setMessage] = React.useState("");
+      const [gameOver, setGameOver] = React.useState(false);
+
+      React.useEffect(() => {
+        if (mode === "bot" && turn === "b" && !gameOver) {
+          const t = setTimeout(() => {
+            const m = checkersBotMove(board, "b", botLevel);
+            if (m) performMove(m.from[0], m.from[1], m.move);
+            else { setMessage("Нет ходов — игра окончена"); setGameOver(true); }
+          }, 350);
+          return () => clearTimeout(t);
+        }
+      }, [board, turn, mode, botLevel, gameOver]);
+
+      function performMove(sr, sc, move) {
+        if (gameOver) return;
+        const nb = cloneBoard(board);
+        const piece = { ...nb[sr][sc] }; nb[sr][sc] = null;
+        const [fr, fc] = move.path[move.path.length - 1];
+        piece.king = piece.king || (piece.color === "w" ? fr === 0 : fr === 7);
+        nb[fr][fc] = piece;
+        move.captured.forEach(([cr, cc]) => nb[cr][cc] = null);
+        setBoard(nb);
+        const next = turn === "w" ? "b" : "w";
+        setTurn(next);
+        setSelected(null); setMoves([]);
+        const anyMoves = (() => { for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { if (nb[r][c] && nb[r][c].color === next) { if (getCheckersMoves(nb, r, c).length > 0) return true; } } return false; })();
+        if (!anyMoves) { setMessage("Игра окончена"); setGameOver(true); }
+      }
+
+      function onClickCell(r, c) {
+        if (gameOver) return;
+        if (mode === null) { setMessage("Выберите режим игры (2 игрока или с ботом)"); setTimeout(() => setMessage(""), 1100); return; }
+        if (selected) {
+          const mv = moves.find(m => {
+            const [fr, fc] = m.path[m.path.length - 1]; return fr === r && fc === c;
+          });
+          if (mv) { performMove(selected[0], selected[1], mv); return; }
+          if (board[r][c] && board[r][c].color === turn) { setSelected([r, c]); setMoves(getCheckersMoves(board, r, c)); }
+          else { setSelected(null); setMoves([]); }
+        } else {
+          if (board[r][c] && board[r][c].color === turn) { setSelected([r, c]); setMoves(getCheckersMoves(board, r, c)); }
+        }
+      }
+
+      function reset() { setBoard(initCheckersBoard()); setTurn("w"); setSelected(null); setMoves([]); setMode(null); setBotLevel(1); setMessage(""); setGameOver(false); }
+
+      return (
+        <div className="game-container">
+          {message && <div className="popup">{message}</div>}
+          <div className="game-controls">
+            <div className="mode-controls">
+              {mode === null ? (
+                <>
+                  <button className="btn small" onClick={() => setMode("2p")}>🧑‍🤝‍🧑 2 игрока</button>
+                  <button className="btn small" onClick={() => setMode("bot")}>🤖 С ботом</button>
+                  <button className="btn small alt" onClick={reset}>🔄 Новая</button>
+                  <button className="btn small alt" onClick={goMenu}>🏠 В меню</button>
+                </>
+              ) : (
+                <>
+                  <div className="mode-row">
+                    <button className={`btn small ${mode === "2p" ? "selected" : ""}`} onClick={() => setMode("2p")}>🧑‍🤝‍🧑 2 игрока</button>
+                    <button className={`btn small ${mode === "bot" ? "selected" : ""}`} onClick={() => setMode("bot")}>🤖 С ботом</button>
+                  </div>
+                  {mode === "bot" && (
+                    <div className="difficulty">
+                      <span className="diff-label">Уровень:</span>
+                      <button className={`btn tiny ${botLevel === 1 ? "selected" : ""}`} onClick={() => setBotLevel(1)}>Лёгкий</button>
+                      <button className={`btn tiny ${botLevel === 2 ? "selected" : ""}`} onClick={() => setBotLevel(2)}>Средний</button>
+                      <button className={`btn tiny ${botLevel === 3 ? "selected" : ""}`} onClick={() => setBotLevel(3)}>Сложный</button>
+                    </div>
+                  )}
+                  <button className="btn small alt" onClick={reset}>🔄 Новая</button>
+                  <button className="btn small alt" onClick={goMenu}>🏠 В меню</button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <h2 className="title">Шашки</h2>
+
+          <div className="theme-switcher" style={{ marginBottom: 8 }}>
+            <button className="btn small alt" onClick={toggleTheme}>🎨 Тема: {theme === "neon" ? "Неоновая" : "Классическая"}</button>
+          </div>
+
+          <div className="board-wrapper">
+            <div className="board" role="grid" aria-label="Шашечная доска">
+              {board.map((row, r) => row.map((cell, c) => {
+                const light = (r + c) % 2 === 0;
+                const sel = selected && selected[0] === r && selected[1] === c;
+                const isMove = moves.some(m => { const [fr, fc] = m.path[m.path.length - 1]; return fr === r && fc === c; });
+                return (
+                  <div key={r + "-" + c} onClick={() => onClickCell(r, c)}
+                    className={`cell ${light ? "light" : "dark"} ${sel ? "selected" : ""} ${isMove ? "highlight" : ""}`}>
+                    {cell && (
+                      <div className={`checker-piece ${cell.color === "w" ? "checker-white" : "checker-black"} ${cell.king ? "checker-king" : ""}`}>
+                      </div>
+                    )}
+                  </div>
+                );
+              }))}
+            </div>
+          </div>
+
+          <div className="status">Ход: <strong>{turn === "w" ? "Белые" : "Чёрные"}</strong></div>
+        </div>
+      );
+    }
+
+    /* ========== APP (главное меню) ========== */
+    function App() {
+      const [game, setGame] = React.useState(null);
+      const [theme, setTheme] = React.useState("neon"); // "neon" или "classic"
+
+      React.useEffect(() => {
+        document.body.classList.remove("classic");
+        if (theme === "classic") document.body.classList.add("classic");
+        else document.body.classList.remove("classic");
+      }, [theme]);
+
+      function toggleTheme() { setTheme(prev => prev === "neon" ? "classic" : "neon"); }
+
+      return (
+        <div className="menu" style={{ width: '100%', maxWidth: 980 }}>
+          {!game ? (
+            <div className="main-menu">
+              <h1 className="title">Главное меню</h1>
+              <div className="btn-group" style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                <button className="btn big green" onClick={() => setGame("chess")}>Шахматы</button>
+                <button className="btn big green" onClick={() => setGame("checkers")}>Шашки</button>
+              </div>
+              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
+                <button className="btn small alt" onClick={toggleTheme}>🎨 Тема: {theme === "neon" ? "Неоновая" : "Классическая"}</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {game === "chess" && <ChessGame goMenu={() => setGame(null)} theme={theme} toggleTheme={toggleTheme} />}
+              {game === "checkers" && <CheckersGame goMenu={() => setGame(null)} theme={theme} toggleTheme={toggleTheme} />}
+            </>
+          )}
+        </div>
+      );
+    }
+
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(<App />);
   </script>
